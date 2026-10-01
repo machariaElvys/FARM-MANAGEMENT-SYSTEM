@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.config import get_settings
 from app.database.session import Base, SessionLocal, engine
 from app.models.domain import RecordCategory
-from app.routers import auth, records, reports
+from app.routers import admin, auth, records, reports
 
 DEFAULT_CATEGORIES = [
     ("planting", "Planting"),
@@ -42,6 +42,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api")
 app.include_router(records.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 
 @app.get("/health", tags=["system"])

@@ -1,10 +1,14 @@
-const items = [
+const farmerItems = [
   { id: 'dashboard', label: 'Overview', icon: '◫' },
   { id: 'records', label: 'Farm records', icon: '▤' },
   { id: 'reports', label: 'Reports', icon: '▥' },
 ]
 
 export default function Sidebar({ active, onNavigate, user, onSignOut }) {
+  const items = user.role === 'admin'
+    ? [...farmerItems, { id: 'admin', label: 'Administration', icon: '⚙' }]
+    : farmerItems
+
   return (
     <aside className="sidebar">
       <div className="brand"><span className="brand-mark">S</span><span>Shamba Ledger</span></div>
@@ -20,7 +24,7 @@ export default function Sidebar({ active, onNavigate, user, onSignOut }) {
         <div className="help-card"><span className="help-icon">✳</span><strong>Your farm, at a glance</strong><p>A simple place for the details that help you plan the next season.</p></div>
         <div className="profile-row">
           <div className="avatar">{user.name.trim().charAt(0).toUpperCase()}</div>
-          <div className="profile-copy"><strong>{user.name}</strong><span>Farmer account</span></div>
+          <div className="profile-copy"><strong>{user.name}</strong><span>{user.role === 'admin' ? 'Administrator' : 'Farmer account'}</span></div>
           <button className="signout" title="Sign out" aria-label="Sign out" onClick={onSignOut}>↗</button>
         </div>
       </div>

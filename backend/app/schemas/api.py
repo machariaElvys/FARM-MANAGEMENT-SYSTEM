@@ -28,6 +28,34 @@ class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AdminOverviewRead(BaseModel):
+    total_users: int
+    active_users: int
+    total_records: int
+    records_this_year: int
+
+
+class AdminUserRead(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+    role: str
+    is_active: bool
+    created_at: datetime
+    record_count: int
+
+
+class AdminUserListRead(BaseModel):
+    items: list[AdminUserRead]
+    total: int
+    limit: int
+    offset: int
+
+
+class AdminUserStatusUpdate(BaseModel):
+    is_active: bool
+
+
 class TokenRead(BaseModel):
     access_token: str
     token_type: str = "bearer"

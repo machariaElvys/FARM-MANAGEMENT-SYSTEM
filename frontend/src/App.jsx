@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import AuthPanel from './components/AuthPanel.jsx'
+import AdminPage from './components/AdminPage.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import RecordsPage from './components/RecordsPage.jsx'
 import ReportsPage from './components/ReportsPage.jsx'
@@ -7,7 +8,7 @@ import Sidebar from './components/Sidebar.jsx'
 import SyncStatus from './components/SyncStatus.jsx'
 import { api } from './services/api.js'
 
-const pageTitles = { dashboard: 'Overview', records: 'Farm records', reports: 'Reports' }
+const pageTitles = { dashboard: 'Overview', records: 'Farm records', reports: 'Reports', admin: 'Administration' }
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -62,6 +63,7 @@ export default function App() {
           {view === 'dashboard' && <Dashboard token={session.access_token} user={session.user} onNavigate={setView} />}
           {view === 'records' && <RecordsPage token={session.access_token} userId={session.user.id} />}
           {view === 'reports' && <ReportsPage token={session.access_token} userId={session.user.id} />}
+          {view === 'admin' && session.user.role === 'admin' && <AdminPage token={session.access_token} />}
         </div>
       </main>
     </div>
