@@ -1,7 +1,5 @@
 # Farm Record Management System
 
-An initial full-stack slice for the Digital Farm Record Management System described in the project documents. It includes farmer registration and login, private farm-record CRUD, and a yearly summary report.
-
 ## Stack
 
 - React + Vite frontend
@@ -9,13 +7,6 @@ An initial full-stack slice for the Digital Farm Record Management System descri
 - SQLAlchemy 2
 - PostgreSQL in deployment; SQLite as the zero-setup local default
 
-## Run locally from Ubuntu / WSL
-
-The project folder is under Windows Documents. From Ubuntu on WSL, open it with:
-
-```bash
-cd /mnt/c/Users/User/Documents/Codex/2026-10-01/th/outputs/farm-management-system
-```
 
 ### Backend
 
