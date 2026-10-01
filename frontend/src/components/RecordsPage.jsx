@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import RecordForm from './RecordForm.jsx'
+import { queueRecordDelete, readRecords, replaceServerRecords, savePendingRecord } from '../offline/db.js'
+import { syncPendingChanges } from '../offline/sync.js'
 import { api, money, shortDate } from '../services/api.js'
 
-export default function RecordsPage({ token }) {
+const categoryLabels = { planting: 'Planting', inputs: 'Farm inputs', labour: 'Labour', expenses: 'Other expenses', harvest: 'Harvest', sales: 'Sales' }
+
+export default function RecordsPage({ token, userId }) {
   const [records, setRecords] = useState([])
   const [query, setQuery] = useState('')
   const [editor, setEditor] = useState(null)
@@ -11,18 +15,32 @@ export default function RecordsPage({ token }) {
   const [error, setError] = useState('')
 
   async function loadRecords() {
-    setLoading(true)
     try {
-      setRecords(await api('/records?limit=500', { token }))
+      setRecords(await readRecords(userId))
+      setLoading(false)
+    } catch {
+      setError('Local record storage is unavailable in this browser.')
+      setLoading(false)
+      return
+    }
+    if (!navigator.onLine) return
+    try {
+      await syncPendingChanges(token, userId)
+      const serverRecords = await api('/records?limit=500', { token })
+      await replaceServerRecords(serverRecords, userId)
+      setRecords(await readRecords(userId))
       setError('')
     } catch (requestError) {
-      setError(requestError.message)
-    } finally {
-      setLoading(false)
+      if (!(await readRecords(userId)).length) setError(requestError.message)
     }
   }
 
-  useEffect(() => { loadRecords() }, [token])
+  useEffect(() => {
+    loadRecords()
+    const refreshed = () => loadRecords()
+    window.addEventListener('farm:sync-complete', refreshed)
+    return () => window.removeEventListener('farm:sync-complete', refreshed)
+  }, [token, userId])
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase()
@@ -35,9 +53,27 @@ export default function RecordsPage({ token }) {
     setError('')
     try {
       const editing = editor?.id
-      await api(editing ? `/records/${editing}` : '/records', { token, method: editing ? 'PUT' : 'POST', body: payload })
+      const now = new Date().toISOString()
+      const record = {
+        ...payload,
+        id: editor?.id || crypto.randomUUID(),
+        category_label: categoryLabels[payload.category],
+        created_at: editor?.created_at || now,
+        updated_at: now,
+      }
+      await savePendingRecord(record, userId)
       setEditor(null)
-      await loadRecords()
+      setRecords(await readRecords(userId))
+      window.dispatchEvent(new Event('farm:queue-changed'))
+      if (navigator.onLine) {
+        try {
+          await syncPendingChanges(token, userId)
+          await loadRecords()
+          window.dispatchEvent(new Event('farm:sync-complete'))
+        } catch {
+          // Keep the local entry and queue it for the next successful connection.
+        }
+      }
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -48,8 +84,18 @@ export default function RecordsPage({ token }) {
   async function removeRecord(record) {
     if (!window.confirm(`Delete “${record.title}”? This cannot be undone.`)) return
     try {
-      await api(`/records/${record.id}`, { token, method: 'DELETE' })
-      await loadRecords()
+      await queueRecordDelete(record.id, userId)
+      setRecords(await readRecords(userId))
+      window.dispatchEvent(new Event('farm:queue-changed'))
+      if (navigator.onLine) {
+        try {
+          await syncPendingChanges(token, userId)
+          await loadRecords()
+          window.dispatchEvent(new Event('farm:sync-complete'))
+        } catch {
+          // Keep the deletion queued until the server can be reached.
+        }
+      }
     } catch (requestError) {
       setError(requestError.message)
     }
@@ -62,7 +108,7 @@ export default function RecordsPage({ token }) {
       {editor !== null && <section className="panel editor-panel"><div className="panel-heading"><div><span className="eyebrow">FARM ACTIVITY</span><h2>{editor.id ? 'Edit record' : 'Add a record'}</h2></div><button className="icon-button" aria-label="Close form" onClick={() => setEditor(null)}>×</button></div><RecordForm initial={editor.id ? editor : null} onSubmit={saveRecord} onCancel={() => setEditor(null)} saving={saving} /></section>}
       <section className="panel table-panel">
         <div className="table-toolbar"><div className="record-count"><strong>{records.length}</strong> {records.length === 1 ? 'entry' : 'entries'} <span>in your ledger</span></div><label className="search-box"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your records" aria-label="Search farm records" /></label></div>
-        {loading ? <div className="table-message">Loading your farm records…</div> : filtered.length ? <div className="table-scroll"><table><thead><tr><th>Activity</th><th>Type</th><th>Date</th><th>Quantity</th><th>Amount</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{filtered.map((record) => <tr key={record.id}><td><div className="table-title">{record.title}</div>{record.notes && <div className="table-subtitle">{record.notes}</div>}</td><td><span className={`tag tag-${record.category}`}>{record.category_label}</span></td><td>{shortDate(record.occurred_on)}</td><td>{record.quantity == null ? '—' : `${Number(record.quantity).toLocaleString()} ${record.unit}`}</td><td className="amount-cell">{record.amount == null ? '—' : money(record.amount)}</td><td><div className="row-actions"><button onClick={() => setEditor(record)} aria-label={`Edit ${record.title}`}>Edit</button><button onClick={() => removeRecord(record)} aria-label={`Delete ${record.title}`}>Delete</button></div></td></tr>)}</tbody></table></div> : <div className="table-message"><span className="empty-sun">✳</span><strong>{query ? 'No matching records' : 'Your ledger is ready'}</strong><span>{query ? 'Try another word or clear your search.' : 'Add the first activity, cost, harvest or sale for this farm.'}</span>{!query && <button className="button button-primary" onClick={() => setEditor({})}>＋ Add your first record</button>}</div>}
+        {loading ? <div className="table-message">Loading your farm records…</div> : filtered.length ? <div className="table-scroll"><table><thead><tr><th>Activity</th><th>Type</th><th>Date</th><th>Quantity</th><th>Amount</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{filtered.map((record) => <tr key={record.id}><td><div className="table-title">{record.title}{record.sync_state === 'pending' && <span className="pending-chip">Saved on device</span>}</div>{record.notes && <div className="table-subtitle">{record.notes}</div>}</td><td><span className={`tag tag-${record.category}`}>{record.category_label}</span></td><td>{shortDate(record.occurred_on)}</td><td>{record.quantity == null ? '—' : `${Number(record.quantity).toLocaleString()} ${record.unit}`}</td><td className="amount-cell">{record.amount == null ? '—' : money(record.amount)}</td><td><div className="row-actions"><button onClick={() => setEditor(record)} aria-label={`Edit ${record.title}`}>Edit</button><button onClick={() => removeRecord(record)} aria-label={`Delete ${record.title}`}>Delete</button></div></td></tr>)}</tbody></table></div> : <div className="table-message"><span className="empty-sun">✳</span><strong>{query ? 'No matching records' : 'Your ledger is ready'}</strong><span>{query ? 'Try another word or clear your search.' : 'Add the first activity, cost, harvest or sale for this farm.'}</span>{!query && <button className="button button-primary" onClick={() => setEditor({})}>＋ Add your first record</button>}</div>}
       </section>
     </div>
   )

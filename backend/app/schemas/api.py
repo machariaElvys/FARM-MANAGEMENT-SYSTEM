@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -34,6 +35,7 @@ class TokenRead(BaseModel):
 
 
 class RecordWrite(BaseModel):
+    id: UUID | None = None
     title: str = Field(min_length=1, max_length=160)
     category: RecordCategoryName
     occurred_on: date
@@ -55,3 +57,14 @@ class RecordRead(BaseModel):
     amount: Decimal | None
     created_at: datetime
     updated_at: datetime
+
+
+class SyncOperation(BaseModel):
+    operation_id: UUID
+    action: Literal["upsert", "delete"]
+    record_id: UUID
+    record: RecordWrite | None = None
+
+
+class SyncBatch(BaseModel):
+    operations: list[SyncOperation] = Field(max_length=100)

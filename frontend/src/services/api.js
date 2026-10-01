@@ -1,5 +1,13 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
 
+export class ApiError extends Error {
+  constructor(message, status = null) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 export async function api(path, { token, method = 'GET', body } = {}) {
   const headers = new Headers()
   if (body !== undefined) headers.set('Content-Type', 'application/json')
@@ -13,14 +21,14 @@ export async function api(path, { token, method = 'GET', body } = {}) {
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
-    throw new Error('Could not reach the server. Check that the API is running and try again.')
+    throw new ApiError('Could not reach the server. Check that the API is running and try again.')
   }
 
   if (response.status === 204) return null
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) {
     const detail = payload.detail
-    throw new Error(typeof detail === 'string' ? detail : 'Something went wrong. Please try again.')
+    throw new ApiError(typeof detail === 'string' ? detail : 'Something went wrong. Please try again.', response.status)
   }
   return payload
 }

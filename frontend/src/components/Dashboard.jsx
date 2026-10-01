@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { readRecords } from '../offline/db.js'
+import { summarizeRecords } from '../offline/report.js'
 import { api, harvestSummary, money, shortDate } from '../services/api.js'
 
 export default function Dashboard({ token, user, onNavigate }) {
@@ -6,8 +8,20 @@ export default function Dashboard({ token, user, onNavigate }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api('/reports/summary', { token }).then(setReport).catch((requestError) => setError(requestError.message))
-  }, [token])
+    async function load() {
+      try {
+        setReport(await api('/reports/summary', { token }))
+        setError('')
+      } catch (requestError) {
+        const cached = await readRecords(user.id)
+        setReport(summarizeRecords(cached, new Date().getFullYear()))
+        setError(cached.length ? '' : requestError.message)
+      }
+    }
+    load()
+    window.addEventListener('farm:sync-complete', load)
+    return () => window.removeEventListener('farm:sync-complete', load)
+  }, [token, user.id])
 
   const firstName = user.name.trim().split(/\s+/)[0]
   return (

@@ -1,14 +1,28 @@
 import { useEffect, useState } from 'react'
+import { readRecords } from '../offline/db.js'
+import { summarizeRecords } from '../offline/report.js'
 import { api, harvestSummary, money } from '../services/api.js'
 
-export default function ReportsPage({ token }) {
+export default function ReportsPage({ token, userId }) {
   const [report, setReport] = useState(null)
   const [year, setYear] = useState(new Date().getFullYear())
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api(`/reports/summary?year=${year}`, { token }).then(setReport).catch((requestError) => setError(requestError.message))
-  }, [token, year])
+    async function load() {
+      try {
+        setReport(await api(`/reports/summary?year=${year}`, { token }))
+        setError('')
+      } catch (requestError) {
+        const cached = await readRecords(userId)
+        setReport(summarizeRecords(cached, year))
+        setError(cached.length ? '' : requestError.message)
+      }
+    }
+    load()
+    window.addEventListener('farm:sync-complete', load)
+    return () => window.removeEventListener('farm:sync-complete', load)
+  }, [token, userId, year])
 
   return (
     <div className="page-stack">

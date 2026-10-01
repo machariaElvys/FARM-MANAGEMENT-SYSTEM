@@ -56,6 +56,13 @@ h1, h2, .brand, .metric-value { font-family: 'Manrope', sans-serif; }
 .breadcrumb span { margin: 0 9px; color: #c5cbc6; }
 .breadcrumb strong { color: #44564b; font-weight: 600; }
 .topbar-right { display: flex; align-items: center; gap: 17px; }
+.sync-chip { min-height: 27px; display: inline-flex; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid #e7ede7; border-radius: 20px; color: #617666; background: #fff; font-size: 9px; font-weight: 600; }
+.sync-chip:disabled { opacity: 1; cursor: default; }
+.sync-chip.sync-offline { color: #906b39; border-color: #eee2c9; background: #fffaf0; }
+.sync-chip.sync-failed { color: #a45d4b; border-color: #f0d8d1; background: #fff6f3; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #6f9b73; }
+.sync-offline .sync-dot { background: #c69a4e; }
+.sync-failed .sync-dot { background: #c7735c; }
 .season-chip { display: flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid #e8eee8; background: #fff; border-radius: 20px; color: #78857b; font-size: 9px; font-weight: 600; }
 .season-chip span { width: 6px; height: 6px; border-radius: 50%; background: #6c9e74; }
 .top-avatar { width: 29px; height: 29px; font-size: 11px; }
@@ -145,6 +152,7 @@ th:first-child, td:first-child { padding-left: 17px; min-width: 190px; }
 th:last-child, td:last-child { padding-right: 17px; }
 td { height: 58px; border-top: 1px solid #f0f2ef; padding: 8px 13px; color: #79847c; font-size: 10px; }
 .table-title { color: #45574b; font-size: 10px; font-weight: 600; max-width: 245px; overflow: hidden; text-overflow: ellipsis; }
+.pending-chip { display: inline-flex; vertical-align: middle; margin-left: 7px; padding: 3px 6px; border-radius: 10px; color: #947343; background: #fbf3e3; font-size: 8px; font-weight: 500; }
 .table-subtitle { max-width: 245px; color: #9aa39c; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; font-size: 9px; }
 .tag { display: inline-flex; padding: 5px 8px; border-radius: 20px; color: #54715a; background: #edf4ed; font-size: 9px; }
 .tag-harvest { background: #f8f2df; color: #927d3e; }

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.database.session import get_db
 from app.dependencies import get_current_user
 from app.models.domain import FarmRecord, RecordCategory, User, new_id
-from app.schemas.api import RecordRead, RecordWrite
+from app.schemas.api import RecordRead, RecordWrite, SyncBatch
 
 router = APIRouter(prefix="/records", tags=["farm records"])
 
@@ -83,8 +83,11 @@ def create_record(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> RecordRead:
+    record_id = str(payload.id) if payload.id else new_id()
+    if db.get(FarmRecord, record_id) is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A record with this identifier already exists.")
     record = FarmRecord(
-        id=str(UUID(new_id())),
+        id=record_id,
         farmer_id=current_user.id,
         category=find_category(db, payload.category),
         title=payload.title.strip(),
@@ -98,6 +101,54 @@ def create_record(
     db.commit()
     db.refresh(record)
     return serialize_record(owned_record(db, record.id, current_user.id))
+
+
+@router.post("/sync")
+def sync_records(
+    payload: SyncBatch,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    results = []
+    for operation in payload.operations:
+        record_id = str(operation.record_id)
+        record = db.scalar(
+            select(FarmRecord)
+            .options(joinedload(FarmRecord.category))
+            .where(FarmRecord.id == record_id)
+        )
+
+        if operation.action == "delete":
+            if record is not None:
+                if record.farmer_id != current_user.id:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Farm record not found.")
+                db.delete(record)
+            results.append({"operation_id": str(operation.operation_id), "action": "delete", "record_id": record_id})
+            continue
+
+        if operation.record is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Upsert operations need record data.")
+        if operation.record.id is not None and str(operation.record.id) != record_id:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Record IDs do not match.")
+        if record is not None and record.farmer_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Farm record not found.")
+
+        category = find_category(db, operation.record.category)
+        if record is None:
+            record = FarmRecord(id=record_id, farmer_id=current_user.id, category=category)
+            db.add(record)
+        record.category = category
+        record.title = operation.record.title.strip()
+        record.occurred_on = operation.record.occurred_on
+        record.notes = operation.record.notes.strip()
+        record.quantity = operation.record.quantity
+        record.unit = operation.record.unit.strip()
+        record.amount = operation.record.amount
+        db.flush()
+        results.append({"operation_id": str(operation.operation_id), "action": "upsert", "record": serialize_record(record).model_dump(mode="json")})
+
+    db.commit()
+    return {"results": results}
 
 
 @router.put("/{record_id}", response_model=RecordRead)
