@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "farm-record-api"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0",
+  "psycopg[binary]>=3.2",
+  "pydantic-settings>=2.5",
+  "email-validator>=2.2",
+  "PyJWT[crypto]>=2.9",
+  "pwdlib[argon2]>=0.2",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

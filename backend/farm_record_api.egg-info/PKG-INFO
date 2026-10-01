@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: farm-record-api
+Version: 0.1.0
+Requires-Python: >=3.11
+Requires-Dist: fastapi>=0.115
+Requires-Dist: uvicorn[standard]>=0.30
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: psycopg[binary]>=3.2
+Requires-Dist: pydantic-settings>=2.5
+Requires-Dist: email-validator>=2.2
+Requires-Dist: PyJWT[crypto]>=2.9
+Requires-Dist: pwdlib[argon2]>=0.2
