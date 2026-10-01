@@ -42,8 +42,8 @@ Open the Vite URL printed in the terminal. The frontend defaults to `http://127.
 
 Report totals are calculated from farm records so the first version cannot show stale stored summaries. The `admin` role is present in the user model for the later administrator area; public registration always creates a farmer account.
 
-## Next implementation step
+## Next implemented step
 
-Add offline-first behavior: cache the app shell, store records in IndexedDB, and sync queued create/update/delete operations when connectivity returns. The sync API should use idempotent operation IDs and define a conflict policy before multi-device use.
+Added offline-first behavior: cache the app shell, store records in IndexedDB, and sync queued create/update/delete operations when connectivity returns. The sync API should use idempotent operation IDs and define a conflict policy before multi-device use.
 
 Replace `JWT_SECRET` before deployment. This starter is for development and has not been security-reviewed or deployed.
