@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Local databases and backups — never commit real data
+*.db
+*.db.backup-*
+*.sqlite
+*.sqlite3
+
+# Environment / secrets
+.env
+.env.local
+
+# Node
+node_modules/
+dist/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

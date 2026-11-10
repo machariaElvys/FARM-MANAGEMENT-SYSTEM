@@ -1,3 +1,5 @@
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 export function summarizeRecords(records, year) {
   const items = records.filter((record) => record.occurred_on.startsWith(`${year}-`))
   const costs = new Set(['inputs', 'labour', 'expenses'])
@@ -17,13 +19,29 @@ export function summarizeRecords(records, year) {
     current.amount += Number(record.amount || 0)
     grouped.set(record.category, current)
   }
+  const monthly = MONTH_NAMES.map((label, index) => {
+    const month = index + 1
+    const monthItems = items.filter((record) => Number(record.occurred_on.slice(5, 7)) === month)
+    const monthExpenses = sumAmount(monthItems.filter((record) => costs.has(record.category)))
+    const monthSales = sumAmount(monthItems.filter((record) => record.category === 'sales'))
+    return {
+      month,
+      label,
+      expenses: monthExpenses,
+      sales: monthSales,
+      profit: monthSales - monthExpenses,
+      record_count: monthItems.length,
+    }
+  })
   return {
     year,
     record_count: items.length,
     expenses,
     sales,
+    profit: sales - expenses,
     harvest_quantities: [...harvest.entries()].map(([unit, quantity]) => ({ unit, quantity })),
     categories: [...grouped.entries()].map(([name, values]) => ({ name, ...values })),
+    monthly,
     recent_records: items.slice(0, 5).map((record) => ({
       id: record.id,
       title: record.title,
