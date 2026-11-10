@@ -33,6 +33,31 @@ export async function api(path, { token, method = 'GET', body } = {}) {
   return payload
 }
 
+export async function downloadCsv(path, { token, filename = 'shamba-ledger-records.csv' } = {}) {
+  const headers = new Headers()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  let response
+  try {
+    response = await fetch(`${API_URL}${path}`, { headers })
+  } catch {
+    throw new ApiError('Could not reach the server. Check that the API is running and try again.')
+  }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}))
+    const detail = payload.detail
+    throw new ApiError(typeof detail === 'string' ? detail : 'Could not export your records. Please try again.', response.status)
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export function money(value) {
   return new Intl.NumberFormat('en-KE', {
     style: 'currency',

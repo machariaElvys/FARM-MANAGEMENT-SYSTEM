@@ -1,49 +1,90 @@
-# Farm Record Management System
+# Shamba Ledger — Farm Record Management System
+
+A farm record system for small farms: planting, inputs, labour, expenses,
+harvests, and sales in one ledger, with yearly reports (expenses, sales,
+**profit**, harvest quantities, and a month-by-month profit breakdown),
+CSV export, and offline-first sync for patchy rural connectivity.
 
 ## Stack
 
-- React + Vite frontend
+- React + Vite frontend (offline-first: IndexedDB cache + outbox sync)
 - FastAPI backend
-- SQLAlchemy 2
+- SQLAlchemy 2 + Alembic migrations
 - PostgreSQL in deployment; SQLite as the zero-setup local default
 
+## Quick start (local development)
 
 ### Backend
 
-In the first terminal:
-
 ```bash
 cd backend
-source .venv/bin/activate  # if your virtual environment is in backend/.venv
-python -m pip install -e .  # run once, or after dependencies change
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env   # then set a real JWT_SECRET in .env
+alembic upgrade head   # create tables + seed categories
 uvicorn app.main:app --reload
 ```
 
-The API is available at `http://127.0.0.1:8000`; interactive API docs are at `http://127.0.0.1:8000/docs`. The default database is a local SQLite file. The API reads `DATABASE_URL`, `JWT_SECRET`, `ACCESS_TOKEN_MINUTES`, and `FRONTEND_ORIGIN` from the environment or `backend/.env`. If those variables are already set in your shell, keep using them. To use a project `.env` file, copy `.env.example` only if `backend/.env` does not already exist.
+The API is at `http://127.0.0.1:8000`; interactive docs at `/docs`.
+Settings come from the environment or `backend/.env`:
+`ENVIRONMENT`, `DATABASE_URL`, `JWT_SECRET`, `ACCESS_TOKEN_MINUTES`,
+`FRONTEND_ORIGIN`, `FRONTEND_ORIGINS`, and the auth rate-limit settings.
 
 ### Frontend
 
-In a second Ubuntu terminal:
-
 ```bash
-cd /mnt/c/Users/User/Documents/Codex/2026-10-01/th/outputs/farm-management-system/frontend
-npm install  # run once, or after package.json changes
+cd frontend
+npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-Open the Vite URL printed in the terminal. The frontend defaults to `http://127.0.0.1:8000/api`; set `VITE_API_URL` if the API is hosted elsewhere.
+The frontend defaults to `http://127.0.0.1:8000/api`; set `VITE_API_URL`
+at build time if the API is hosted elsewhere.
 
-## First-slice scope
+## Tests
 
-- Farmer account registration and bearer-token login
-- Farm records for planting, inputs, labour, expenses, harvests, and sales
-- Search, edit, and delete records belonging to the signed-in farmer
-- Yearly report totals for expenses, sales, harvest quantity, and record categories
+```bash
+cd backend
+pytest
+```
 
-Report totals are calculated from farm records so the first version cannot show stale stored summaries. The `admin` role is present in the user model for the later administrator area; public registration always creates a farmer account.
+Tests cover auth, per-farmer ownership isolation, report math (profit and
+monthly breakdown), CSV export, login rate limiting, admin guards, and
+offline sync upsert/delete.
 
-## Next implemented step
+## Database migrations
 
-Added offline-first behavior: cache the app shell, store records in IndexedDB, and sync queued create/update/delete operations when connectivity returns. The sync API should use idempotent operation IDs and define a conflict policy before multi-device use.
+```bash
+cd backend
+alembic upgrade head     # apply migrations
+alembic current          # show current revision
+alembic downgrade base   # roll back everything (destructive)
+```
 
-Replace `JWT_SECRET` before deployment. This starter is for development and has not been security-reviewed or deployed.
+Local SQLite files (`*.db`) are git-ignored — never commit real data.
+
+## Production checklist
+
+- [ ] Set `ENVIRONMENT=production` and a random `JWT_SECRET` (32+ chars).
+      The app **refuses to start** in production with the dev secret.
+      Generate one: `python -c "import secrets; print(secrets.token_urlsafe(48))"`
+- [ ] Set `DATABASE_URL` to PostgreSQL and run `alembic upgrade head`.
+- [ ] Set `FRONTEND_ORIGIN` / `FRONTEND_ORIGINS` to your deployed frontend URL(s).
+- [ ] Build the frontend with `VITE_API_URL` pointing at the deployed API.
+- [ ] Grant the first admin via SQL (see `backend/ADMIN_SETUP.md`) — never
+      through the public sign-up form.
+- [ ] Note: auth rate limits are per-process. Behind multiple workers or
+      replicas, enforce limits at the edge (Cloudflare/nginx) or use Redis.
+
+## Features
+
+- Farmer registration and bearer-token login (Argon2 password hashing)
+- Farm records with search, edit, and delete — always scoped to the owner
+- Yearly reports: expenses, sales, **profit (sales − expenses)**, harvest
+  quantities by unit, category breakdown, and monthly profit
+- CSV export of records (`GET /api/reports/export.csv?year=YYYY`, or all
+  years when `year` is omitted)
+- Offline-first: app shell cached by a service worker, records stored in
+  IndexedDB, queued create/update/delete operations sync when connectivity
+  returns (idempotent operation IDs; last-write-wins on conflicts)
+- Admin area: account overview, paginated user search, suspend/reactivate
