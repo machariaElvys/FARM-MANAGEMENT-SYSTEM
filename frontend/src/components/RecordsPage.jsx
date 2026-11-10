@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import RecordForm from './RecordForm.jsx'
 import { queueRecordDelete, readRecords, replaceServerRecords, savePendingRecord } from '../offline/db.js'
 import { syncPendingChanges } from '../offline/sync.js'
-import { api, money, shortDate } from '../services/api.js'
+import { api, downloadCsv, money, shortDate } from '../services/api.js'
 
 const categoryLabels = { planting: 'Planting', inputs: 'Farm inputs', labour: 'Labour', expenses: 'Other expenses', harvest: 'Harvest', sales: 'Sales' }
 
@@ -13,6 +13,7 @@ export default function RecordsPage({ token, userId }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   async function loadRecords() {
     try {
@@ -52,7 +53,6 @@ export default function RecordsPage({ token, userId }) {
     setSaving(true)
     setError('')
     try {
-      const editing = editor?.id
       const now = new Date().toISOString()
       const record = {
         ...payload,
@@ -81,6 +81,18 @@ export default function RecordsPage({ token, userId }) {
     }
   }
 
+  async function exportCsv() {
+    setExporting(true)
+    setError('')
+    try {
+      await downloadCsv('/reports/export.csv', { token, filename: 'shamba-ledger-records.csv' })
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   async function removeRecord(record) {
     if (!window.confirm(`Delete “${record.title}”? This cannot be undone.`)) return
     try {
@@ -103,7 +115,7 @@ export default function RecordsPage({ token, userId }) {
 
   return (
     <div className="page-stack">
-      <section className="page-heading"><div><span className="eyebrow">YOUR FARM LEDGER</span><h1>Farm records</h1><p>Keep day-to-day activities and costs easy to find.</p></div><button className="button button-primary" onClick={() => setEditor({})}>＋ Add a record</button></section>
+      <section className="page-heading"><div><span className="eyebrow">YOUR FARM LEDGER</span><h1>Farm records</h1><p>Keep day-to-day activities and costs easy to find.</p></div><div className="heading-actions"><button className="button button-quiet" disabled={exporting} onClick={exportCsv}>{exporting ? 'Exporting…' : '⬇ Export CSV'}</button><button className="button button-primary" onClick={() => setEditor({})}>＋ Add a record</button></div></section>
       {error && <p className="inline-error" role="alert">{error}</p>}
       {editor !== null && <section className="panel editor-panel"><div className="panel-heading"><div><span className="eyebrow">FARM ACTIVITY</span><h2>{editor.id ? 'Edit record' : 'Add a record'}</h2></div><button className="icon-button" aria-label="Close form" onClick={() => setEditor(null)}>×</button></div><RecordForm initial={editor.id ? editor : null} onSubmit={saveRecord} onCancel={() => setEditor(null)} saving={saving} /></section>}
       <section className="panel table-panel">

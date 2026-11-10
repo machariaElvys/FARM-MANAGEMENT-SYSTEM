@@ -11,7 +11,11 @@ export async function syncPendingChanges(token, userId) {
     const response = await api('/records/sync', {
       token,
       method: 'POST',
-      body: { operations: batch.map(({ sequence, ...operation }) => operation) },
+      body: {
+        operations: batch.map((operation) =>
+          Object.fromEntries(Object.entries(operation).filter(([key]) => key !== 'sequence')),
+        ),
+      },
     })
     await finishSync(response.results, userId)
     synced += response.results.length

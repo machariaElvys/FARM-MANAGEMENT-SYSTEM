@@ -1,16 +1,29 @@
-# React + Vite
+# Shamba Ledger — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite single-page app for Shamba Ledger (Farm Record Management System).
+See the [root README](../README.md) for the full stack, backend setup, migrations,
+and the production checklist.
 
-Currently, two official plugins are available:
+## Commands
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install        # install dependencies
+npm run dev        # dev server (use -- --host 0.0.0.0 to expose on your LAN)
+npm run build      # production build to dist/
+npm run lint       # eslint
+```
 
-## React Compiler
+## Configuration
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The frontend talks to the API at `http://127.0.0.1:8000/api` by default.
+Set `VITE_API_URL` at **build time** to point at a deployed API, e.g.:
 
-## Expanding the ESLint configuration
+```bash
+VITE_API_URL=https://your-api.example.com/api npm run build
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Authentication uses a bearer token stored in localStorage (`shamba.access-token`).
+Records are cached per-user in IndexedDB and mutations are queued in an outbox,
+then synced to `POST /api/records/sync` when the connection returns. A service
+worker (`public/sw.js`) caches the app shell for offline loads — bump the
+`CACHE` version constant when shipping new assets.

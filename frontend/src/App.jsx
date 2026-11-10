@@ -12,17 +12,17 @@ const pageTitles = { dashboard: 'Overview', records: 'Farm records', reports: 'R
 
 export default function App() {
   const [session, setSession] = useState(null)
-  const [checkingSession, setCheckingSession] = useState(true)
+  // If there is no saved token there is nothing to verify — start unblocked.
+  const [checkingSession, setCheckingSession] = useState(() => {
+    try { return Boolean(localStorage.getItem('shamba.access-token')) } catch { return false }
+  })
   const [view, setView] = useState('dashboard')
 
   useEffect(() => {
     const savedToken = localStorage.getItem('shamba.access-token')
     let cachedUser = null
     try { cachedUser = JSON.parse(localStorage.getItem('shamba.user') || 'null') } catch { cachedUser = null }
-    if (!savedToken) {
-      setCheckingSession(false)
-      return
-    }
+    if (!savedToken) return
     api('/auth/me', { token: savedToken })
       .then((user) => {
         localStorage.setItem('shamba.user', JSON.stringify(user))

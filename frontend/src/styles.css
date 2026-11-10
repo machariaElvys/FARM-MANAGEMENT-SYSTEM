@@ -171,7 +171,18 @@ td { height: 58px; border-top: 1px solid #f0f2ef; padding: 8px 13px; color: #798
 
 .year-picker { display: grid; gap: 6px; color: #88948b; font-size: 9px; font-weight: 600; }
 .year-picker select { min-width: 120px; }
-.report-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+.report-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
+.heading-actions { display: flex; align-items: flex-end; gap: 10px; }
+.profit-positive { color: #3f7d4e !important; }
+.profit-negative { color: #b0553f !important; }
+.monthly-list { display: grid; gap: 9px; padding: 8px 0 4px; }
+.monthly-row { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px; }
+.monthly-label { color: #67756b; font-size: 10px; font-weight: 600; }
+.monthly-track { height: 6px; background: #eff2ef; border-radius: 6px; overflow: hidden; }
+.monthly-track span { display: block; height: 100%; border-radius: inherit; }
+.monthly-bar-positive { background: #6da377; }
+.monthly-bar-negative { background: #c97a63; }
+.monthly-value { color: #55695a; font-size: 10px; font-weight: 600; min-width: 86px; text-align: right; }
 .admin-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
 .admin-summary-grid .report-card { min-width: 0; }
 .admin-role { display: inline-flex; padding: 5px 8px; border-radius: 20px; color: #54715a; background: #edf4ed; font-size: 9px; text-transform: capitalize; }
@@ -227,6 +238,7 @@ td { height: 58px; border-top: 1px solid #f0f2ef; padding: 8px 13px; color: #798
   .page-content { padding-left: 25px; padding-right: 25px; }
   .topbar { padding: 0 25px; }
   .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
