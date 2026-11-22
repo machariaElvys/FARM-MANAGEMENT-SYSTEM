@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     access_token_minutes: int = 720
     frontend_origin: str = "http://localhost:5173"
     # Optional comma-separated list of additional allowed origins, e.g.
-    # FRONTEND_ORIGINS="https://app.example.com,https://admin.example.com"
+    # FRONTEND_ORIGINS="https://farm-management-system-eh7.pages.dev"
     frontend_origins: str = ""
     # Auth rate limits (sliding window, per client IP + email).
     login_rate_limit_attempts: int = 10
