@@ -33,10 +33,10 @@ export default function Dashboard({ token, user, onNavigate }) {
       </section>
       {error && <p className="inline-error" role="alert">{error}</p>}
       <section className="metric-grid" aria-label="Yearly farm summary">
-        <Metric label="Farm expenses" value={report ? money(report.expenses) : '—'} icon="↗" tone="terra" note="Inputs, labour and other costs" />
-        <Metric label="Sales recorded" value={report ? money(report.sales) : '—'} icon="↙" tone="green" note="From sales entries this year" />
-        <Metric label="Profit" value={report ? money(report.profit) : '—'} icon="◈" tone="blue" note="Sales minus expenses, this year" profit={report ? report.profit : null} />
-        <Metric label="Harvest recorded" value={harvestSummary(report)} icon="✳" tone="gold" note="Quantity grouped by unit" />
+        <Metric label="Farm expenses" value={report ? money(report.expenses) : '—'} note="Inputs, labour and other costs" />
+        <Metric label="Sales recorded" value={report ? money(report.sales) : '—'} note="From sales entries this year" />
+        <Metric label="Profit" value={report ? money(report.profit) : '—'}  note="Sales minus expenses, this year" profit={report ? report.profit : null} />
+        <Metric label="Harvest recorded" value={harvestSummary(report)}  note="Quantity grouped by unit" />
       </section>
       <section className="content-grid">
         <div className="panel recent-panel">
@@ -59,5 +59,5 @@ function Metric({ label, value, icon, tone, note }) {
 }
 
 function EmptyState({ message }) {
-  return <div className="empty-state"><span className="empty-sun">✳</span><p>{message}</p></div>
+  return <div className="empty-state"><span className="empty-sun"></span><p>{message}</p></div>
 }
